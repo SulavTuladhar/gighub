@@ -1,0 +1,13 @@
+.div{
+    background-color: blueviolet;
+    height: 100vh;
+    width: 100vw;
+}
+.red{
+    background-color: #555;
+    height: 10vh;
+    width: 10vh;
+    border: none;
+    border-radius: 12%;
+    margin: 10% 0 0 10%;
+}
