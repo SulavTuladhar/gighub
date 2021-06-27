@@ -17,9 +17,11 @@ app.use(express.json());            // Parse for Json
 
 //import Routin level middleware
 const AuthRouter = require('./controllers/auth.controller');
+const UserRouter = require('./controllers/user.controller');
 
 //Loading Routin level middleware
 app.use('/auth', AuthRouter);
+app.use('/user', UserRouter);
 
 
 //Error handeling middlware
