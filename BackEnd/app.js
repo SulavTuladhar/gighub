@@ -7,7 +7,7 @@ const PORT = 8080;
 
 // Application level middleware
 const authenticate = require('./middlewares/authenticate')
-
+const authorize = require('./middlewares/authorize');
 // Runinng as a part of this program
 require('./db_init');
 
@@ -24,10 +24,12 @@ app.use(express.json());            // Parse for Json
 //import Routin level middleware
 const AuthRouter = require('./controllers/auth.controller');
 const UserRouter = require('./controllers/user.controller');
+const projectRouter = require('./modules/project/project.route');
 
 //Loading Routin level middleware
 app.use('/auth', AuthRouter);
-app.use('/user', authenticate, UserRouter);
+app.use('/user', authenticate, authorize, UserRouter);
+app.use('/project', projectRouter)
 
 
 //Error handeling middlware
