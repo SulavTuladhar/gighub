@@ -1,103 +1,123 @@
 const router = require('express').Router();
-const dbConfig = require('./../configs/db.config');
-
-function connection(cb){
-    dbConfig.MongoClient.connect(dbConfig.conxnURL,
-        {useUnifiedTopolology:true},
-        function(err,client){
-
-            if(err){
-                cb(err);
-            }else{
-                const db = client.db(dbConfig.dbName);
-                cb(null, db);
-            }
-        }
-
-        )
-}
+const userModel = require('./../models/user.model');
+const MAP_USER_REQ = require('./../helpers/map_user_requests');
+const Uploader = require('./../middlewares/uploader');
+const fs = require('fs')
+const path =require('path');
 
 router.route('/')
     .get(function(req,res,next){
-        connection(function(err,db){
-            if(err){
-                return next(err);
-            }
-            db.collection('users')
-                .find({})
-                .toArray(function(err,users){
+        userModel
+            .find({})
+            .sort({
+                _id: -1
+            })
+                .exec(function(err,users){
                     if(err){
                         return next(err);
                     }
                     res.json(users);
                 })
-        })
     });
-    // .post(function(req,res,next){
-
-    // });
  
 router.route('/:id')
     .get(function(req,res,next){
         const id = req.params.id; 
-        connection(function(err,db){
+        // userModel
+        //     .findOne({
+        //         _id:id
+        //     })
+        //         .then(function(user){
+        //             if(!user){
+        //                 return next({
+        //                     msg: 'User not found',
+        //                     status: 404
+        //                 })
+        //             }
+        //             res.json(user)
+        //         })
+        //         .catch(function(err){
+        //             next(err)
+        //         })
+
+        userModel.findById(id, function(err,user){
             if(err){
-                return next(err); 
+                return next(err)
             }
-            db
-                .collection('users')
-                .find({_id: new dbConfig.OID(id)})
-                .toArray(function(err,user){
-                    if(err){
-                        return next(err)
-                    }
-                    if(!user[0]){
-                        return next({
-                            msg: 'User not found',
-                            status: 404
-                        })
-                    }
-                    res.json(user[0])
+            if(!user){
+                return next({
+                    msg: 'User not found',
+                    status: 404
                 })
+            }
+            res.json(user)
         })
     })
 
-    .put(function(req,res,next){
-        connection(function(err,db){
+    .put(Uploader.single('image'), function(req,res,next){
+        if(req.fileTypeError){
+            return next({
+                msg: "Invalid file format",
+                status: 400
+            })
+        }
+        const data = req.body;
+        if(req.file){
+            data.image = req.file.filename;
+        }
+        
+        userModel.findById(req.params.id, function(err,user){
             if(err){
-                return next(err);
+                return next(err)
             }
-            db
-                .collection('users')
-                .update(
-                    {_id: new dbConfig.OID(req.params.id)},
-                    {$set: req.body}
-                )
-                    .then(function(data){
-                        res.json(data)
+            if(!user){
+                return next({
+                    msg: 'User not found',
+                    status: 404
+                })
+            }
+            var oldImage = user.image;
+
+            var mappedUpdatedUser = MAP_USER_REQ(user, data);
+
+            // if user exists not let's update
+            mappedUpdatedUser.save(function(err,updated){
+                if(err){
+                    return next(err)
+                }
+                if(req.file){
+                    fs.unlink(path.join(process.cwd(),'uploads/images/' + oldImage), function(err,done){
+                        if(err){
+                            console.log('error in removing', err)
+                        }else{
+                            console.log("sucess in removing")
+                        }
                     })
-                    .catch(function(err){
-                        next(err)
-                    })
-        })
+                }
+                res.json(updated)
+            })
+        
+            });
+
     })
 
     .delete(function(req,res,next){
-        connection(function(err,db){
+        userModel.findById(req.params.id, function(err,user){
             if(err){
-                return next(err);
+                return next(err)
             }
-            db
-                .collection('users')
-                .remove({
-                    _id: new dbConfig.OID(req.params.id)
-                },
-                    function(err,removed){
-                        if(err){
-                            return next(err);
-                        }
-                        res.json(removed)
-                    })
+            if(!user){
+                return next({
+                    msg: "user not found",
+                    status: 404
+                })
+            }
+            user.remove(function(err,removed){
+                if(err){
+                    return next(err)
+                }
+                res.json(removed)
+            })
         })
     });
     
