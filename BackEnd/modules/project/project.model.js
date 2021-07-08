@@ -29,7 +29,12 @@ const ProjectSchema = new Schema({
     description: String,
     role: {
         type: String,
-        enum:  ['head','member']
+        enum:  ['owner', 'head' ,'member'],
+        default: 'owner'
+    },
+    flag:{
+        type: String,
+        enum: ['on track', 'at risk', 'off track']
     },
     user: {
         type: Schema.Types.ObjectId,
@@ -39,7 +44,7 @@ const ProjectSchema = new Schema({
     todos: [ToDoSchema], //Array of object
     status: {
         type: String,
-        enum:['on going', 'Completed']
+        enum:['on going', 'completed']
     },
     dueDate: Date
 },{

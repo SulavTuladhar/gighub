@@ -17,7 +17,7 @@ router.route('/search')
     .post(authenticate, projectController.search)
 
 router.route('/:id')
-    .get(authenticate, projectController.findbyId)
+    .get(authenticate, projectController.findById)
     .put(authenticate, projectController.update)
     .delete(authenticate, projectController.remove)
 
